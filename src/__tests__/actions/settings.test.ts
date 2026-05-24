@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 vi.mock('@/lib/supabase/server', () => ({ createClient: vi.fn() }))
 vi.mock('next/navigation', () => ({ redirect: vi.fn() }))
+vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }))
 vi.mock('@/lib/crypto', () => ({
   encrypt: vi.fn((v: string) => `enc:${v}`),
   decrypt: vi.fn((v: string) => v.replace('enc:', '')),
@@ -15,7 +16,7 @@ const mockAuth = { getUser: vi.fn() }
 const mockFrom  = vi.fn()
 const mockSelect = vi.fn()
 const mockEq     = vi.fn()
-const mockSingle = vi.fn()
+const mockMaybeSingle = vi.fn()
 const mockUpsert = vi.fn()
 
 const defaultSettings = {
@@ -52,8 +53,8 @@ beforeEach(() => {
   })
   mockFrom.mockReturnValue({ select: mockSelect, upsert: mockUpsert })
   mockSelect.mockReturnValue({ eq: mockEq })
-  mockEq.mockReturnValue({ single: mockSingle })
-  mockSingle.mockResolvedValue({ data: defaultSettings, error: null })
+  mockEq.mockReturnValue({ maybeSingle: mockMaybeSingle })
+  mockMaybeSingle.mockResolvedValue({ data: defaultSettings, error: null })
   mockUpsert.mockResolvedValue({ error: null })
 })
 
@@ -71,5 +72,17 @@ describe('updateSettings', () => {
     expect(mockUpsert).toHaveBeenCalledWith(
       expect.objectContaining({ user_id: 'user-123', ai_provider: 'claude' })
     )
+  })
+
+  it('does not include masked API key in payload', async () => {
+    await updateSettings({ claude_api_key_enc: 'sk-a****' })
+    const call = mockUpsert.mock.calls[0][0]
+    expect(call).not.toHaveProperty('claude_api_key_enc')
+  })
+
+  it('encrypts a new plaintext key', async () => {
+    await updateSettings({ claude_api_key_enc: 'sk-ant-realkey123' })
+    const call = mockUpsert.mock.calls[0][0]
+    expect(call.claude_api_key_enc).toBe('enc:sk-ant-realkey123')
   })
 })
