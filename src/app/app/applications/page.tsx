@@ -1,11 +1,12 @@
 'use client'
 
 import { useEffect, useState, useTransition } from 'react'
-import { Plus } from 'lucide-react'
+import { Plus, Search } from 'lucide-react'
 import { ApplicationsTable } from '@/components/app/ApplicationsTable'
 import { SlideOver } from '@/components/app/SlideOver'
 import { ApplicationDetail } from '@/components/app/ApplicationDetail'
 import { ApplicationForm } from '@/components/app/ApplicationForm'
+import { FindJobsPanel } from '@/components/app/FindJobsPanel'
 import { listApplications } from '@/actions/applications'
 import type { Application } from '@/lib/types'
 
@@ -13,6 +14,7 @@ export default function ApplicationsPage() {
   const [applications, setApplications] = useState<Application[]>([])
   const [selected, setSelected] = useState<Application | null>(null)
   const [addOpen, setAddOpen] = useState(false)
+  const [findOpen, setFindOpen] = useState(false)
   const [, startTransition] = useTransition()
 
   function reload() {
@@ -35,17 +37,30 @@ export default function ApplicationsPage() {
             Applications
           </h1>
         </div>
-        <button
-          onClick={() => setAddOpen(true)}
-          style={{
-            display: 'flex', alignItems: 'center', gap: 6,
-            padding: '9px 16px', background: 'var(--accent)',
-            border: 'none', borderRadius: 'var(--r-sm)',
-            color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer',
-          }}
-        >
-          <Plus size={14} strokeWidth={2} /> Add application
-        </button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button
+            onClick={() => setFindOpen(true)}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6,
+              padding: '9px 16px', background: 'var(--bg-1)',
+              border: '1px solid var(--border-1)', borderRadius: 'var(--r-sm)',
+              color: 'var(--fg-1)', fontSize: 13, fontWeight: 600, cursor: 'pointer',
+            }}
+          >
+            <Search size={14} strokeWidth={2} /> Find Jobs
+          </button>
+          <button
+            onClick={() => setAddOpen(true)}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6,
+              padding: '9px 16px', background: 'var(--accent)',
+              border: 'none', borderRadius: 'var(--r-sm)',
+              color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer',
+            }}
+          >
+            <Plus size={14} strokeWidth={2} /> Add application
+          </button>
+        </div>
       </div>
 
       <div style={{ background: 'var(--bg-1)', border: '1px solid var(--border-0)', borderRadius: 'var(--r-lg)', overflow: 'hidden' }}>
@@ -71,6 +86,10 @@ export default function ApplicationsPage() {
       <SlideOver open={addOpen} onClose={() => setAddOpen(false)} title="New application">
         <ApplicationForm mode="create" onDone={() => { setAddOpen(false); reload() }} />
       </SlideOver>
+
+      {findOpen && (
+        <FindJobsPanel onClose={() => setFindOpen(false)} onDone={reload} />
+      )}
     </div>
   )
 }
