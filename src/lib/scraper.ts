@@ -124,6 +124,11 @@ function parseJsonLd(job: JsonObject, url: string): ScrapeResult {
   // baseSalary
   result.salary_range = parseJsonLdSalary(job.baseSalary)
 
+  // Strip keys with null or undefined values so optional fields are truly absent.
+  for (const key of Object.keys(result) as (keyof ScrapeResult)[]) {
+    if (result[key] == null) delete result[key]
+  }
+
   return result
 }
 
@@ -148,17 +153,17 @@ function parseJsonLdLocation(loc: JsonValue): string | undefined {
   return asString(obj.name)
 }
 
-function mapJobLocationType(v: string | undefined): RemoteType {
-  if (!v) return null
+function mapJobLocationType(v: string | undefined): RemoteType | undefined {
+  if (!v) return undefined
   const norm = v.toUpperCase()
   if (norm.includes('TELECOMMUTE') || norm === 'REMOTE') return 'remote'
   if (norm.includes('HYBRID')) return 'hybrid'
   if (norm.includes('AT_LOCATION') || norm === 'ONSITE' || norm === 'ON_SITE') return 'onsite'
-  return null
+  return undefined
 }
 
-function mapEmploymentType(v: JsonValue): ContractType {
-  if (!v) return null
+function mapEmploymentType(v: JsonValue): ContractType | undefined {
+  if (!v) return undefined
   const values = Array.isArray(v) ? v : [v]
   for (const entry of values) {
     const s = asString(entry)
@@ -171,7 +176,7 @@ function mapEmploymentType(v: JsonValue): ContractType {
     }
     if (norm.includes('INTERN')) return 'internship'
   }
-  return null
+  return undefined
 }
 
 function parseJsonLdSalary(salary: JsonValue): string | undefined {
@@ -229,9 +234,9 @@ function parseHeuristics($: CheerioAPI, url: string): ScrapeResult {
     confidence: role && company ? 'medium' : 'low',
   }
 
-  // Strip any undefined keys so callers see the shape they expect.
+  // Strip any null or undefined keys so callers see the shape they expect.
   for (const key of Object.keys(result) as (keyof ScrapeResult)[]) {
-    if (result[key] === undefined) delete result[key]
+    if (result[key] == null) delete result[key]
   }
 
   return result

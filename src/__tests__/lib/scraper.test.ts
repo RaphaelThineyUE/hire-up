@@ -46,7 +46,7 @@ describe('scrapeJobPosting', () => {
     expect(result.remote_type).toBe('remote')
     expect(result.contract_type).toBe('full-time')
     expect(result.posted_at).toBe('2026-05-20')
-    expect(result.salary_range).toContain('80000')
+    expect(result.salary_range).toBe('EUR 80000–110000')
     expect(result.job_description).toContain('Senior Engineer')
     expect(result.confidence).toBe('high')
   })
