@@ -1,21 +1,26 @@
 'use client'
 
 import { useEffect, useState, useTransition } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { Plus, Search } from 'lucide-react'
 import { ApplicationsTable } from '@/components/app/ApplicationsTable'
 import { SlideOver } from '@/components/app/SlideOver'
 import { ApplicationDetail } from '@/components/app/ApplicationDetail'
 import { ApplicationForm } from '@/components/app/ApplicationForm'
 import { FindJobsPanel } from '@/components/app/FindJobsPanel'
+import { UrlScrapeBar } from '@/components/app/UrlScrapeBar'
 import { listApplications } from '@/actions/applications'
 import type { Application } from '@/lib/types'
+import type { ScrapeResult } from '@/lib/scraper'
 
 export default function ApplicationsPage() {
   const [applications, setApplications] = useState<Application[]>([])
   const [selected, setSelected] = useState<Application | null>(null)
   const [addOpen, setAddOpen] = useState(false)
   const [findOpen, setFindOpen] = useState(false)
+  const [prefill, setPrefill] = useState<Partial<Application> | null>(null)
   const [, startTransition] = useTransition()
+  const searchParams = useSearchParams()
 
   function reload() {
     startTransition(async () => {
@@ -25,6 +30,21 @@ export default function ApplicationsPage() {
   }
 
   useEffect(() => { reload() }, [])
+
+  useEffect(() => {
+    if (searchParams.get('scan') === '1') setFindOpen(true)
+  }, [searchParams])
+
+  function handlePrefill(data: ScrapeResult) {
+    setPrefill(data as Partial<Application>)
+    setAddOpen(true)
+  }
+
+  function handleAddClose() {
+    setAddOpen(false)
+    setPrefill(null)
+    reload()
+  }
 
   return (
     <div style={{ padding: 32, maxWidth: 1280, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -63,6 +83,8 @@ export default function ApplicationsPage() {
         </div>
       </div>
 
+      <UrlScrapeBar onPrefill={handlePrefill} />
+
       <div style={{ background: 'var(--bg-1)', border: '1px solid var(--border-0)', borderRadius: 'var(--r-lg)', overflow: 'hidden' }}>
         <ApplicationsTable
           applications={applications}
@@ -83,8 +105,8 @@ export default function ApplicationsPage() {
         )}
       </SlideOver>
 
-      <SlideOver open={addOpen} onClose={() => setAddOpen(false)} title="New application">
-        <ApplicationForm mode="create" onDone={() => { setAddOpen(false); reload() }} />
+      <SlideOver open={addOpen} onClose={handleAddClose} title="New application">
+        <ApplicationForm mode="create" initial={prefill ?? undefined} onDone={handleAddClose} />
       </SlideOver>
 
       {findOpen && (
