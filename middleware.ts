@@ -28,13 +28,17 @@ export async function middleware(request: NextRequest) {
   if (!user && request.nextUrl.pathname.startsWith('/app')) {
     const loginUrl = request.nextUrl.clone()
     loginUrl.pathname = '/login'
-    return NextResponse.redirect(loginUrl)
+    const redirectResponse = NextResponse.redirect(loginUrl)
+    supabaseResponse.cookies.getAll().forEach(cookie => redirectResponse.cookies.set(cookie))
+    return redirectResponse
   }
 
   if (user && ['/login', '/signup'].includes(request.nextUrl.pathname)) {
     const dashUrl = request.nextUrl.clone()
     dashUrl.pathname = '/app/dashboard'
-    return NextResponse.redirect(dashUrl)
+    const redirectResponse = NextResponse.redirect(dashUrl)
+    supabaseResponse.cookies.getAll().forEach(cookie => redirectResponse.cookies.set(cookie))
+    return redirectResponse
   }
 
   return supabaseResponse
