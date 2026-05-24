@@ -30,7 +30,7 @@ export async function uploadCV(formData: FormData): Promise<{ error?: string }> 
   const ext = file.name.split('.').pop()?.toLowerCase()
   if (!['pdf', 'docx'].includes(ext ?? '')) return { error: 'Only PDF and DOCX are supported' }
 
-  const storagePath = `${userId}/${file.name}`
+  const storagePath = `${userId}/cv.${ext}`
   const bytes = await file.arrayBuffer()
   const buffer = Buffer.from(bytes)
 
@@ -53,7 +53,8 @@ export async function uploadCV(formData: FormData): Promise<{ error?: string }> 
       extractedText = result.value
     }
     wordCount = extractedText.trim().split(/\s+/).filter(Boolean).length
-  } catch {
+  } catch (err) {
+    console.log('CV text extraction failed (non-fatal)', { filename: file.name, ext, err })
     // extraction failure is non-fatal — save the file, text will be empty
   }
 
@@ -73,7 +74,11 @@ export async function uploadCV(formData: FormData): Promise<{ error?: string }> 
 
 export async function deleteCV(): Promise<void> {
   const { supabase, userId } = await getUser()
-  const cv = await getCV()
+  const { data: cv } = await supabase
+    .from('cvs')
+    .select('storage_path')
+    .eq('user_id', userId)
+    .maybeSingle()
   if (cv) {
     await supabase.storage.from('cvs').remove([cv.storage_path])
     await supabase.from('cvs').delete().eq('user_id', userId)
