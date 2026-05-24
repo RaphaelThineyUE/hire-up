@@ -1,6 +1,7 @@
 'use client'
 
 import { useTransition, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { updateSettings } from '@/actions/settings'
 import { SettingsSection } from './SettingsSection'
 import type { UserSettings } from '@/lib/types'
@@ -30,6 +31,7 @@ export function SettingsForm({ settings }: SettingsFormProps) {
   const [isPending, startTransition] = useTransition()
   const [saved, setSaved] = useState(false)
   const [provider, setProvider] = useState(settings.ai_provider)
+  const router = useRouter()
 
   async function handleSubmit(formData: FormData) {
     setSaved(false)
@@ -122,6 +124,18 @@ export function SettingsForm({ settings }: SettingsFormProps) {
             <label style={labelStyle}>Hour (UTC)</label>
             <input name="cron_hour_utc" type="number" min={0} max={23} defaultValue={settings.cron_hour_utc} style={{ ...inputStyle, maxWidth: 80 }} />
           </div>
+          <button
+            type="button"
+            onClick={() => router.push('/app/applications?scan=1')}
+            style={{
+              padding: '7px 14px', background: 'var(--bg-2)',
+              border: '1px solid var(--border-1)', borderRadius: 'var(--r-sm)',
+              fontSize: 12, color: 'var(--fg-1)', cursor: 'pointer',
+              alignSelf: 'flex-start',
+            }}
+          >
+            Run now →
+          </button>
         </div>
       </SettingsSection>
 
