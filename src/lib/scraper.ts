@@ -70,6 +70,10 @@ function findJobPosting(node: JsonValue): JsonObject | null {
       const found = findJobPosting(obj['@graph'])
       if (found) return found
     }
+    if (obj['mainEntity']) {
+      const found = findJobPosting(obj['mainEntity'])
+      if (found) return found
+    }
   }
   return null
 }
@@ -190,7 +194,7 @@ function parseJsonLdSalary(salary: JsonValue): string | undefined {
   if (valueObj) {
     const min = asString(valueObj.minValue) ?? asString(valueObj.value)
     const max = asString(valueObj.maxValue)
-    const unit = asString(valueObj.unitText)
+    const unit = asString(valueObj.unitText) ?? asString(obj.unitText)
     if (min && max) return formatSalary(currency, `${min}–${max}`, unit)
     if (min) return formatSalary(currency, min, unit)
   } else {
@@ -350,7 +354,7 @@ function extractDescription($: CheerioAPI): string | undefined {
   let best: { text: string; length: number } | undefined
   for (const sel of selectors) {
     $clone.find(sel).each((_, el) => {
-      const text = $clone.find(el).text().replace(/\s+/g, ' ').trim()
+      const text = $(el).text().replace(/\s+/g, ' ').trim()
       if (text.length > (best?.length ?? 0)) best = { text, length: text.length }
     })
     if (best && best.length > 200) break
@@ -365,7 +369,7 @@ function extractDescription($: CheerioAPI): string | undefined {
   return truncate(best.text, MAX_DESCRIPTION_LENGTH)
 }
 
-function detectRemoteType(text: string): RemoteType {
+function detectRemoteType(text: string): RemoteType | undefined {
   const lower = text.toLowerCase()
   const hasHybrid = /\bhybrid\b/.test(lower)
   const hasRemote = /\b(?:remote|work from home|wfh|telecommute)\b/.test(lower)
@@ -374,16 +378,16 @@ function detectRemoteType(text: string): RemoteType {
   if (hasHybrid) return 'hybrid'
   if (hasRemote) return 'remote'
   if (hasOnsite) return 'onsite'
-  return null
+  return undefined
 }
 
-function detectContractType(text: string): ContractType {
+function detectContractType(text: string): ContractType | undefined {
   const lower = text.toLowerCase()
   if (/\b(?:intern(?:ship)?)\b/.test(lower)) return 'internship'
   if (/\b(?:part[-\s]?time)\b/.test(lower)) return 'part-time'
   if (/\b(?:contract(?:or)?|freelance|contract role)\b/.test(lower)) return 'contract'
   if (/\b(?:full[-\s]?time|permanent)\b/.test(lower)) return 'full-time'
-  return null
+  return undefined
 }
 
 function detectSalary(text: string): string | undefined {
@@ -449,9 +453,17 @@ function firstText($: CheerioAPI, selector: string): string | undefined {
 }
 
 function isoDateOnly(input: string): string | undefined {
-  // Already YYYY-MM-DD
+  // Already YYYY-MM-DD (fast path)
   const direct = input.match(/^(\d{4}-\d{2}-\d{2})/)
   if (direct) return direct[1]
+
+  // Allowlist of parseable formats before falling back to new Date()
+  const isAllowed =
+    /^\d{4}\/\d{2}\/\d{2}$/.test(input) ||
+    /^[A-Za-z]+ \d{1,2},?\s+\d{4}$/.test(input) ||
+    /^\d{1,2} [A-Za-z]+ \d{4}$/.test(input)
+  if (!isAllowed) return undefined
+
   const d = new Date(input)
   if (!Number.isNaN(d.getTime())) return d.toISOString().slice(0, 10)
   return undefined

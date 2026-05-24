@@ -79,4 +79,47 @@ describe('scrapeJobPosting', () => {
     const result = await scrapeJobPosting('https://example.com')
     expect(result.confidence).toBe('low')
   })
+
+  it('extracts from JSON-LD @graph wrapper', async () => {
+    const html = `<html><head><script type="application/ld+json">{
+    "@context": "https://schema.org",
+    "@graph": [
+      { "@type": "WebSite", "name": "Jobs Inc" },
+      { "@type": "JobPosting", "title": "Staff Engineer", "hiringOrganization": { "name": "Graph Corp" } }
+    ]
+  }</script></head><body></body></html>`
+    vi.mocked(fetch).mockResolvedValue({ ok: true, text: () => Promise.resolve(html) } as Response)
+    const result = await scrapeJobPosting('https://example.com')
+    expect(result.role).toBe('Staff Engineer')
+    expect(result.company).toBe('Graph Corp')
+    expect(result.confidence).toBe('high')
+  })
+
+  it('includes unitText from top-level baseSalary', async () => {
+    const html = `<html><head><script type="application/ld+json">{
+    "@type": "JobPosting",
+    "title": "Engineer",
+    "hiringOrganization": { "name": "Acme" },
+    "baseSalary": { "currency": "USD", "unitText": "YEAR", "value": { "minValue": 80000, "maxValue": 120000 } }
+  }</script></head><body></body></html>`
+    vi.mocked(fetch).mockResolvedValue({ ok: true, text: () => Promise.resolve(html) } as Response)
+    const result = await scrapeJobPosting('https://example.com')
+    expect(result.salary_range).toBeDefined()
+    expect(result.salary_range).toContain('80000')
+    expect(result.salary_range?.toLowerCase()).toContain('year')
+  })
+
+  it('converts "Posted X days ago" to an ISO date', async () => {
+    const html = `<html>
+  <head><meta property="og:site_name" content="Job Board" /></head>
+  <body><h1>Backend Dev</h1><p>Posted 3 days ago</p><main>Great job in a great team.</main></body>
+  </html>`
+    vi.mocked(fetch).mockResolvedValue({ ok: true, text: () => Promise.resolve(html) } as Response)
+    const result = await scrapeJobPosting('https://example.com')
+    expect(result.posted_at).toBeDefined()
+    // Should be a valid YYYY-MM-DD string, 3 days before today
+    const expected = new Date()
+    expected.setDate(expected.getDate() - 3)
+    expect(result.posted_at).toBe(expected.toISOString().split('T')[0])
+  })
 })
