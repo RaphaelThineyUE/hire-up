@@ -74,7 +74,7 @@ export default function Nav() {
           >
             {theme === 'dark' ? <SunIcon /> : <MoonIcon />}
           </button>
-          <a href="#login" style={{
+          <a href="/login" style={{
             height: 36, padding: '0 14px',
             borderRadius: 'var(--r-sm)',
             fontFamily: 'var(--font-body)', fontSize: 14, fontWeight: 600,
@@ -84,7 +84,7 @@ export default function Nav() {
             border: '1px solid transparent',
             transition: 'background var(--t-fast) var(--ease-out)',
           }}>Log in</a>
-          <a href="#signup" style={{
+          <a href="/signup" style={{
             height: 36, padding: '0 14px',
             borderRadius: 'var(--r-sm)',
             fontFamily: 'var(--font-body)', fontSize: 14, fontWeight: 600,
