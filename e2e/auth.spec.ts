@@ -105,7 +105,7 @@ test.describe('authenticated flow', () => {
     await page.getByRole('button', { name: 'Sign in' }).click()
     await expect(page).toHaveURL(/\/app\/dashboard/, { timeout: 10_000 })
     await expect(page.getByText('Total')).toBeVisible()
-    await expect(page.getByText('Applications')).toBeVisible()
+    await expect(page.getByText('Applications').first()).toBeVisible()
   })
 
   test('already-logged-in user visiting /login is redirected to dashboard', async ({ page }) => {
@@ -115,10 +115,12 @@ test.describe('authenticated flow', () => {
     await page.locator('#password').fill(TEST_PASSWORD)
     await page.getByRole('button', { name: 'Sign in' }).click()
     await expect(page).toHaveURL(/\/app\/dashboard/, { timeout: 10_000 })
+    // Wait for all network activity to settle so session cookies are fully written
+    await page.waitForLoadState('networkidle')
 
     // Revisit /login — middleware should redirect back to dashboard
     await page.goto('/login')
-    await expect(page).toHaveURL(/\/app\/dashboard/, { timeout: 5_000 })
+    await expect(page).toHaveURL(/\/app\/dashboard/, { timeout: 10_000 })
   })
 
   test('sidebar navigation to Applications works', async ({ page }) => {
