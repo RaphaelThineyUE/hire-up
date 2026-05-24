@@ -130,7 +130,7 @@ function ProductPreview() {
 
 export default function Hero() {
   return (
-    <section style={{ background: 'var(--bg-0)', padding: '80px 0 100px' }}>
+    <section id="product" style={{ background: 'var(--bg-0)', padding: '80px 0 100px' }}>
       <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 var(--gutter)' }}>
         <div style={{ display: 'grid', gap: 32 }}>
           <div style={{

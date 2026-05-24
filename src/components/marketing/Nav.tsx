@@ -23,7 +23,6 @@ const LINKS = [
   { label: 'Product', href: '#product' },
   { label: 'How it works', href: '#how' },
   { label: 'Pricing', href: '#pricing' },
-  { label: 'Changelog', href: '#changelog' },
 ]
 
 export default function Nav() {
