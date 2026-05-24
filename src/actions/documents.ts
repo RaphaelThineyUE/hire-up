@@ -37,6 +37,7 @@ export async function generateDocumentForApplication(
 
   const settings = await getSettings()
   const markdown = await aiGenerateDocument(cv.extracted_text, jobDescription, type, settings)
+  if (!markdown) return { error: 'AI document generation failed or returned empty content.' }
 
   const filename = `${type}-${Date.now()}.md`
   const storagePath = `${userId}/${applicationId}/${filename}`
@@ -55,7 +56,10 @@ export async function generateDocumentForApplication(
     content_markdown: markdown,
   }).select('id').single()
 
-  if (dbError) return { error: dbError.message }
+  if (dbError) {
+    await supabase.storage.from('documents').remove([storagePath])
+    return { error: dbError.message }
+  }
 
   revalidatePath(`/app/applications/${applicationId}`)
   return { id: data.id }
@@ -74,7 +78,8 @@ export async function scoreApplication(
   const score = await scoreMatch(cv.extracted_text, jobDescription, settings)
   if (score === null) return { error: 'AI scoring failed. Check your AI provider settings.' }
 
-  await supabase.from('applications').update({ match_score_value: score }).eq('id', applicationId)
+  const { error: updateError } = await supabase.from('applications').update({ match_score_value: score }).eq('id', applicationId)
+  if (updateError) return { error: updateError.message }
   revalidatePath(`/app/applications/${applicationId}`)
   revalidatePath('/app/applications')
   revalidatePath('/app/dashboard')
