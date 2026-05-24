@@ -82,8 +82,8 @@ export default async function DashboardPage() {
                 </tr>
               </thead>
               <tbody>
-                {recent.map(app => (
-                  <tr key={app.id} style={{ borderBottom: '1px solid var(--border-0)' }}>
+                {recent.map((app, i) => (
+                  <tr key={app.id} style={{ borderBottom: i < recent.length - 1 ? '1px solid var(--border-0)' : 'none' }}>
                     <td style={{ padding: '12px 16px', verticalAlign: 'middle' }}>
                       <div style={{ fontWeight: 600, fontSize: 13, color: 'var(--fg-0)' }}>{app.role}</div>
                       <div style={{ fontSize: 12, color: 'var(--fg-2)', marginTop: 1 }}>{app.company}</div>
@@ -95,7 +95,7 @@ export default async function DashboardPage() {
                       <ScoreBadge value={app.match_score_value} />
                     </td>
                     <td style={{ padding: '12px 16px', verticalAlign: 'middle', fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--fg-2)' }}>
-                      {new Date(app.applied_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                      {app.applied_at ? new Date(app.applied_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '—'}
                     </td>
                   </tr>
                 ))}
