@@ -44,8 +44,9 @@ export async function uploadCV(formData: FormData): Promise<{ error?: string }> 
   let wordCount = 0
   try {
     if (ext === 'pdf') {
-      const pdfParse = (await import('pdf-parse')).default
-      const result = await pdfParse(buffer)
+      const { PDFParse } = await import('pdf-parse')
+      const parser = new PDFParse({ data: buffer })
+      const result = await parser.getText()
       extractedText = result.text
     } else {
       const mammoth = await import('mammoth')

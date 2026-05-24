@@ -63,12 +63,11 @@ export async function updateSettings(updates: Partial<UserSettings>): Promise<vo
 
   // Encrypt key fields; skip if the value contains **** (masked — user didn't change it)
   for (const field of ENCRYPTED_FIELDS) {
-    const raw = payload[field] as string | undefined
-    if (raw === undefined) continue
-    if (raw === '' || raw.includes('****')) {
+    const raw = payload[field] as string | null | undefined
+    if (raw == null || raw === '' || (typeof raw === 'string' && raw.includes('****'))) {
       delete payload[field]
     } else {
-      payload[field] = encrypt(raw)
+      payload[field] = encrypt(raw as string)
     }
   }
 

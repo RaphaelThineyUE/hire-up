@@ -2,7 +2,11 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 vi.mock('@/lib/supabase/server', () => ({ createClient: vi.fn() }))
 vi.mock('next/navigation', () => ({ redirect: vi.fn() }))
-vi.mock('pdf-parse', () => ({ default: vi.fn().mockResolvedValue({ text: 'CV text here', numpages: 2 }) }))
+vi.mock('pdf-parse', () => ({
+  PDFParse: vi.fn().mockImplementation(() => ({
+    getText: vi.fn().mockResolvedValue({ text: 'CV text here' }),
+  })),
+}))
 vi.mock('mammoth', () => ({ extractRawText: vi.fn().mockResolvedValue({ value: 'DOCX text here' }) }))
 
 import { createClient } from '@/lib/supabase/server'
