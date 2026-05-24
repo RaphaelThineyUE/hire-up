@@ -1,9 +1,14 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+
+const srOnly: React.CSSProperties = {
+  position: 'absolute', width: 1, height: 1, padding: 0,
+  margin: -1, overflow: 'hidden', clip: 'rect(0,0,0,0)', whiteSpace: 'nowrap', border: 0,
+}
 
 export default function SignupPage() {
   const [email, setEmail] = useState('')
@@ -11,19 +16,22 @@ export default function SignupPage() {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const router = useRouter()
-  const supabase = createClient()
+  const supabase = useMemo(() => createClient(), [])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
     setError(null)
-    const { error } = await supabase.auth.signUp({ email, password })
-    if (error) {
-      setError(error.message)
+    try {
+      const { error } = await supabase.auth.signUp({ email, password })
+      if (error) {
+        setError(error.message)
+      } else {
+        router.push('/app/dashboard')
+        router.refresh()
+      }
+    } finally {
       setLoading(false)
-    } else {
-      router.push('/app/dashboard')
-      router.refresh()
     }
   }
 
@@ -46,14 +54,16 @@ export default function SignupPage() {
       </div>
 
       {error && (
-        <p style={{ margin: 0, padding: '10px 12px', background: 'var(--danger-bg)', border: '1px solid var(--danger)', borderRadius: 'var(--r-sm)', fontSize: 13, color: 'var(--danger)' }}>
+        <p role="alert" style={{ margin: 0, padding: '10px 12px', background: 'var(--danger-bg)', border: '1px solid var(--danger)', borderRadius: 'var(--r-sm)', fontSize: 13, color: 'var(--danger)' }}>
           {error}
         </p>
       )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        <input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} required style={inputStyle} />
-        <input type="password" placeholder="Password (min 6 chars)" value={password} onChange={e => setPassword(e.target.value)} required minLength={6} style={inputStyle} />
+        <label htmlFor="email" style={srOnly}>Email</label>
+        <input id="email" type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} required style={inputStyle} />
+        <label htmlFor="password" style={srOnly}>Password</label>
+        <input id="password" type="password" placeholder="Password (min 6 chars)" value={password} onChange={e => setPassword(e.target.value)} required minLength={6} style={inputStyle} />
       </div>
 
       <button

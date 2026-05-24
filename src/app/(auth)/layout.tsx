@@ -1,4 +1,7 @@
-export default function AuthLayout({ children }: { children: React.ReactNode }) {
+import type { ReactNode } from 'react'
+import Image from 'next/image'
+
+export default function AuthLayout({ children }: { children: ReactNode }) {
   return (
     <div style={{
       minHeight: '100vh',
@@ -16,7 +19,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         maxWidth: 400,
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 32 }}>
-          <img src="/mark.svg" alt="" style={{ width: 24, height: 24 }} />
+          <Image src="/mark.svg" alt="" width={24} height={24} />
           <span style={{
             fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 20,
             letterSpacing: '-0.04em', color: 'var(--fg-0)',
