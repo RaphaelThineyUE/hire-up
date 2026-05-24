@@ -1,13 +1,14 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useTransition, useEffect } from 'react'
 import Link from 'next/link'
-import { ExternalLink, Pencil, Trash2 } from 'lucide-react'
+import { ExternalLink, Pencil, Trash2, Zap, FileText, Loader2, Download } from 'lucide-react'
 import { Chip } from './Chip'
 import { ScoreBadge } from './ScoreBadge'
 import { ApplicationForm } from './ApplicationForm'
 import { deleteApplication } from '@/actions/applications'
-import type { Application } from '@/lib/types'
+import { scoreApplication, generateDocumentForApplication, listDocuments, deleteDocument } from '@/actions/documents'
+import type { Application, AppDocument } from '@/lib/types'
 
 interface ApplicationDetailProps {
   application: Application
@@ -17,11 +18,52 @@ interface ApplicationDetailProps {
 
 export function ApplicationDetail({ application: app, onClose, fullPage = false }: ApplicationDetailProps) {
   const [editing, setEditing] = useState(false)
+  const [scoring, startScore] = useTransition()
+  const [generating, startGenerate] = useTransition()
+  const [scoreError, setScoreError] = useState<string | null>(null)
+  const [genError, setGenError] = useState<string | null>(null)
+  const [documents, setDocuments] = useState<AppDocument[]>([])
+  const [currentScore, setCurrentScore] = useState(app.match_score_value)
+
+  useEffect(() => {
+    if (fullPage) {
+      listDocuments(app.id).then(setDocuments)
+    }
+  }, [app.id, fullPage])
 
   async function handleDelete() {
     if (!confirm(`Remove application to ${app.company}?`)) return
     await deleteApplication(app.id)
     onClose?.()
+  }
+
+  function handleScore() {
+    if (!app.job_description) { setScoreError('No job description — add one first.'); return }
+    setScoreError(null)
+    startScore(async () => {
+      const result = await scoreApplication(app.id, app.job_description!)
+      if ('error' in result) setScoreError(result.error)
+      else setCurrentScore(result.score)
+    })
+  }
+
+  function handleGenerate(type: 'cover_letter' | 'tailored_cv') {
+    if (!app.job_description) { setGenError('No job description — add one first.'); return }
+    setGenError(null)
+    startGenerate(async () => {
+      const result = await generateDocumentForApplication(app.id, app.job_description!, type)
+      if ('error' in result) {
+        setGenError(result.error)
+      } else {
+        const updated = await listDocuments(app.id)
+        setDocuments(updated)
+      }
+    })
+  }
+
+  async function handleDeleteDocument(docId: string) {
+    await deleteDocument(docId, app.id)
+    setDocuments(prev => prev.filter(d => d.id !== docId))
   }
 
   const fieldStyle: React.CSSProperties = { display: 'flex', flexDirection: 'column', gap: 2 }
@@ -30,19 +72,18 @@ export function ApplicationDetail({ application: app, onClose, fullPage = false 
     letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--fg-3)',
   }
   const fieldValue: React.CSSProperties = { fontSize: 13, color: 'var(--fg-0)' }
+  const sectionLabel: React.CSSProperties = {
+    fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.06em',
+    textTransform: 'uppercase', color: 'var(--fg-3)',
+  }
 
   if (editing) {
-    return (
-      <ApplicationForm
-        mode="edit"
-        initial={app}
-        onDone={() => setEditing(false)}
-      />
-    )
+    return <ApplicationForm mode="edit" initial={app} onDone={() => setEditing(false)} />
   }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+      {/* Header */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 }}>
           <div>
@@ -63,7 +104,7 @@ export function ApplicationDetail({ application: app, onClose, fullPage = false 
 
         <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
           <Chip status={app.status} />
-          <ScoreBadge value={app.match_score_value} />
+          <ScoreBadge value={currentScore} />
           {app.url && (
             <a href={app.url} target="_blank" rel="noopener noreferrer"
               style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: 'var(--fg-2)', textDecoration: 'none' }}>
@@ -73,6 +114,7 @@ export function ApplicationDetail({ application: app, onClose, fullPage = false 
         </div>
       </div>
 
+      {/* Fields */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
         {app.location && <div style={fieldStyle}><span style={fieldLabel}>Location</span><span style={fieldValue}>{app.location}</span></div>}
         {app.remote_type && <div style={fieldStyle}><span style={fieldLabel}>Remote</span><span style={{ ...fieldValue, textTransform: 'capitalize' }}>{app.remote_type}</span></div>}
@@ -82,17 +124,27 @@ export function ApplicationDetail({ application: app, onClose, fullPage = false 
         <div style={fieldStyle}><span style={fieldLabel}>Applied</span><span style={{ ...fieldValue, fontFamily: 'var(--font-mono)', fontSize: 12 }}>{new Date(app.applied_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</span></div>
       </div>
 
-      {fullPage && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--fg-3)' }}>Documents</div>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <div style={{ padding: '12px 16px', background: 'var(--bg-2)', border: '1px solid var(--border-0)', borderRadius: 'var(--r-sm)', fontSize: 13, color: 'var(--fg-2)' }}>
-              No documents yet. AI features coming in Plan 2.
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Score match */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+        <button
+          onClick={handleScore}
+          disabled={scoring || !app.job_description}
+          style={{
+            display: 'inline-flex', alignItems: 'center', gap: 6,
+            padding: '7px 14px', background: 'var(--bg-2)',
+            border: '1px solid var(--border-0)', borderRadius: 'var(--r-sm)',
+            fontSize: 12, color: scoring ? 'var(--fg-3)' : 'var(--fg-1)', cursor: scoring ? 'default' : 'pointer',
+            alignSelf: 'flex-start',
+          }}
+          title={!app.job_description ? 'Add a job description to enable scoring' : undefined}
+        >
+          {scoring ? <Loader2 size={13} strokeWidth={1.75} style={{ animation: 'spin 1s linear infinite' }} /> : <Zap size={13} strokeWidth={1.75} />}
+          {scoring ? 'Scoring…' : 'Score match'}
+        </button>
+        {scoreError && <p style={{ margin: 0, fontSize: 12, color: 'var(--danger)' }}>{scoreError}</p>}
+      </div>
 
+      {/* Notes */}
       {app.notes && (
         <div style={fieldStyle}>
           <span style={fieldLabel}>Notes</span>
@@ -100,6 +152,82 @@ export function ApplicationDetail({ application: app, onClose, fullPage = false 
         </div>
       )}
 
+      {/* Documents — full page only */}
+      {fullPage && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div style={sectionLabel}>Documents</div>
+
+          <div style={{ display: 'flex', gap: 8 }}>
+            {(['cover_letter', 'tailored_cv'] as const).map(type => (
+              <button
+                key={type}
+                onClick={() => handleGenerate(type)}
+                disabled={generating || !app.job_description}
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 6,
+                  padding: '7px 14px', background: 'var(--accent)',
+                  border: 'none', borderRadius: 'var(--r-sm)',
+                  fontSize: 12, color: '#fff', cursor: generating ? 'default' : 'pointer',
+                  opacity: generating ? 0.6 : 1,
+                }}
+                title={!app.job_description ? 'Add a job description to generate documents' : undefined}
+              >
+                {generating
+                  ? <Loader2 size={13} strokeWidth={1.75} style={{ animation: 'spin 1s linear infinite' }} />
+                  : <FileText size={13} strokeWidth={1.75} />}
+                {type === 'cover_letter' ? 'Generate cover letter' : 'Generate tailored CV'}
+              </button>
+            ))}
+          </div>
+          {genError && <p style={{ margin: 0, fontSize: 12, color: 'var(--danger)' }}>{genError}</p>}
+
+          {documents.length > 0 && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {documents.map(doc => (
+                <div key={doc.id} style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  padding: '10px 14px', background: 'var(--bg-2)',
+                  border: '1px solid var(--border-0)', borderRadius: 'var(--r-sm)',
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <FileText size={14} strokeWidth={1.75} color="var(--fg-2)" />
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--fg-0)', textTransform: 'capitalize' }}>
+                        {doc.type.replace('_', ' ')}
+                      </div>
+                      <div style={{ fontSize: 11, color: 'var(--fg-3)', fontFamily: 'var(--font-mono)' }}>
+                        {new Date(doc.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                      </div>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    <a
+                      href={`/api/documents/${doc.id}/download?format=pdf`}
+                      style={{ padding: '5px 10px', background: 'var(--bg-1)', border: '1px solid var(--border-0)', borderRadius: 'var(--r-sm)', fontSize: 12, color: 'var(--fg-1)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4 }}
+                    >
+                      <Download size={12} strokeWidth={1.75} /> PDF
+                    </a>
+                    <a
+                      href={`/api/documents/${doc.id}/download?format=docx`}
+                      style={{ padding: '5px 10px', background: 'var(--bg-1)', border: '1px solid var(--border-0)', borderRadius: 'var(--r-sm)', fontSize: 12, color: 'var(--fg-1)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4 }}
+                    >
+                      <Download size={12} strokeWidth={1.75} /> DOCX
+                    </a>
+                    <button
+                      onClick={() => handleDeleteDocument(doc.id)}
+                      style={{ padding: '5px 8px', background: 'transparent', border: '1px solid var(--border-0)', borderRadius: 'var(--r-sm)', cursor: 'pointer', color: 'var(--danger)', fontSize: 12, display: 'flex', alignItems: 'center' }}
+                    >
+                      <Trash2 size={12} strokeWidth={1.75} />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Open full page link — slide-over only */}
       {!fullPage && (
         <Link
           href={`/app/applications/${app.id}`}
