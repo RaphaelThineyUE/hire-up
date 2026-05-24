@@ -1,7 +1,7 @@
 export type MatchLabel = 'low' | 'medium' | 'high' | null
 
 export function deriveMatchLabel(score: number | null): MatchLabel {
-  if (score === null || score === undefined) return null
+  if (score === null) return null
   if (score < 40) return 'low'
   if (score < 70) return 'medium'
   return 'high'

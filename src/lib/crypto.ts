@@ -4,7 +4,7 @@ const ALGORITHM = 'aes-256-gcm'
 
 function key(): Buffer {
   const hex = process.env.ENCRYPTION_KEY
-  if (!hex || hex.length !== 64) throw new Error('ENCRYPTION_KEY must be 64 hex chars')
+  if (!hex || hex.length !== 64 || !/^[0-9a-fA-F]{64}$/.test(hex)) throw new Error('ENCRYPTION_KEY must be 64 hex chars')
   return Buffer.from(hex, 'hex')
 }
 
@@ -18,6 +18,7 @@ export function encrypt(plaintext: string): string {
 
 export function decrypt(ciphertext: string): string {
   const buf = Buffer.from(ciphertext, 'base64')
+  if (buf.length < 29) throw new Error('Ciphertext too short')
   const iv = buf.subarray(0, 12)
   const tag = buf.subarray(12, 28)
   const encrypted = buf.subarray(28)

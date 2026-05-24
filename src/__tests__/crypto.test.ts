@@ -1,7 +1,11 @@
-import { describe, it, expect, beforeAll } from 'vitest'
+import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 
 beforeAll(() => {
   process.env.ENCRYPTION_KEY = 'a'.repeat(64)
+})
+
+afterAll(() => {
+  delete process.env.ENCRYPTION_KEY
 })
 
 const getCrypto = () => import('../lib/crypto')
@@ -23,6 +27,14 @@ describe('encrypt / decrypt', () => {
     const ct = encrypt('secret')
     const tampered = ct.slice(0, -4) + 'AAAA'
     expect(() => decrypt(tampered)).toThrow()
+  })
+
+  it('throws on tampered auth tag', async () => {
+    const { encrypt, decrypt } = await getCrypto()
+    const ct = encrypt('secret')
+    const buf = Buffer.from(ct, 'base64')
+    buf[14] ^= 0xff
+    expect(() => decrypt(buf.toString('base64'))).toThrow()
   })
 })
 
