@@ -1,5 +1,6 @@
 'use client'
 
+import type { CSSProperties } from 'react'
 import { useTheme } from '@/components/ThemeProvider'
 import { Sun, Moon, Bell } from 'lucide-react'
 
@@ -11,7 +12,7 @@ export function TopBar({ userEmail }: TopBarProps) {
   const { theme, toggle } = useTheme()
   const initial = userEmail ? userEmail[0].toUpperCase() : '?'
 
-  const iconBtn: React.CSSProperties = {
+  const iconBtn: CSSProperties = {
     width: 32, height: 32, display: 'grid', placeItems: 'center',
     background: 'transparent', border: 'none', cursor: 'pointer',
     borderRadius: 'var(--r-sm)', color: 'var(--fg-1)',

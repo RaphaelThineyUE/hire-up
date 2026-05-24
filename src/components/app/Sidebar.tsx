@@ -18,45 +18,52 @@ const NAV_ITEMS: NavItem[] = [
   { id: 'cv',           label: 'CV manager',   href: '/app/cv',           icon: <FileText size={16} strokeWidth={1.75} /> },
 ]
 
+interface NavLinkProps {
+  item: NavItem
+  pathname: string
+  push: (href: string) => void
+}
+
+function NavLink({ item, pathname, push }: NavLinkProps) {
+  const active = pathname.startsWith(item.href)
+  return (
+    <div
+      role="link"
+      tabIndex={0}
+      onClick={() => push(item.href)}
+      onKeyDown={e => e.key === 'Enter' && push(item.href)}
+      style={{
+        position: 'relative',
+        display: 'grid',
+        gridTemplateColumns: '18px 1fr',
+        gap: 10, alignItems: 'center',
+        padding: '7px 8px', borderRadius: 'var(--r-sm)',
+        fontSize: 13.5, color: active ? 'var(--fg-0)' : 'var(--fg-1)',
+        fontWeight: 500, cursor: 'pointer',
+        background: active ? 'var(--bg-2)' : 'transparent',
+        transition: 'background var(--t-fast) var(--ease-out)',
+        userSelect: 'none',
+        outline: 'none',
+      }}
+      onMouseEnter={e => { if (!active) (e.currentTarget as HTMLElement).style.background = 'var(--bg-2)' }}
+      onMouseLeave={e => { if (!active) (e.currentTarget as HTMLElement).style.background = 'transparent' }}
+    >
+      {active && (
+        <span style={{
+          position: 'absolute', left: -8, top: '50%', transform: 'translateY(-50%)',
+          width: 3, height: 16, background: 'var(--accent)', borderRadius: 2,
+        }} />
+      )}
+      <span style={{ color: active ? 'var(--fg-0)' : 'var(--fg-2)', display: 'flex' }}>{item.icon}</span>
+      <span>{item.label}</span>
+    </div>
+  )
+}
+
 export function Sidebar() {
   const pathname = usePathname()
   const router = useRouter()
-
-  function NavLink({ item }: { item: NavItem }) {
-    const active = pathname.startsWith(item.href)
-    return (
-      <div
-        role="link"
-        tabIndex={0}
-        onClick={() => router.push(item.href)}
-        onKeyDown={e => e.key === 'Enter' && router.push(item.href)}
-        style={{
-          position: 'relative',
-          display: 'grid',
-          gridTemplateColumns: '18px 1fr',
-          gap: 10, alignItems: 'center',
-          padding: '7px 8px', borderRadius: 'var(--r-sm)',
-          fontSize: 13.5, color: active ? 'var(--fg-0)' : 'var(--fg-1)',
-          fontWeight: 500, cursor: 'pointer',
-          background: active ? 'var(--bg-2)' : 'transparent',
-          transition: 'background var(--t-fast) var(--ease-out)',
-          userSelect: 'none',
-          outline: 'none',
-        }}
-        onMouseEnter={e => { if (!active) (e.currentTarget as HTMLElement).style.background = 'var(--bg-2)' }}
-        onMouseLeave={e => { if (!active) (e.currentTarget as HTMLElement).style.background = 'transparent' }}
-      >
-        {active && (
-          <span style={{
-            position: 'absolute', left: -8, top: '50%', transform: 'translateY(-50%)',
-            width: 3, height: 16, background: 'var(--accent)', borderRadius: 2,
-          }} />
-        )}
-        <span style={{ color: active ? 'var(--fg-0)' : 'var(--fg-2)', display: 'flex' }}>{item.icon}</span>
-        <span>{item.label}</span>
-      </div>
-    )
-  }
+  const push = router.push.bind(router)
 
   const settingsActive = pathname.startsWith('/app/settings')
 
@@ -80,38 +87,14 @@ export function Sidebar() {
         }}>Hire Up</span>
       </div>
 
-      {NAV_ITEMS.map(item => <NavLink key={item.id} item={item} />)}
+      {NAV_ITEMS.map(item => <NavLink key={item.id} item={item} pathname={pathname} push={push} />)}
 
       <div style={{ marginTop: 'auto', paddingTop: 16, borderTop: '1px solid var(--border-0)' }}>
-        <div
-          role="link"
-          tabIndex={0}
-          onClick={() => router.push('/app/settings')}
-          onKeyDown={e => e.key === 'Enter' && router.push('/app/settings')}
-          style={{
-            position: 'relative',
-            display: 'grid', gridTemplateColumns: '18px 1fr', gap: 10, alignItems: 'center',
-            padding: '7px 8px', borderRadius: 'var(--r-sm)',
-            fontSize: 13.5, color: settingsActive ? 'var(--fg-0)' : 'var(--fg-1)',
-            fontWeight: 500, cursor: 'pointer',
-            background: settingsActive ? 'var(--bg-2)' : 'transparent',
-            transition: 'background var(--t-fast) var(--ease-out)',
-            outline: 'none',
-          }}
-          onMouseEnter={e => { if (!settingsActive) (e.currentTarget as HTMLElement).style.background = 'var(--bg-2)' }}
-          onMouseLeave={e => { if (!settingsActive) (e.currentTarget as HTMLElement).style.background = 'transparent' }}
-        >
-          {settingsActive && (
-            <span style={{
-              position: 'absolute', left: -8, top: '50%', transform: 'translateY(-50%)',
-              width: 3, height: 16, background: 'var(--accent)', borderRadius: 2,
-            }} />
-          )}
-          <span style={{ color: settingsActive ? 'var(--fg-0)' : 'var(--fg-2)', display: 'flex' }}>
-            <Settings size={16} strokeWidth={1.75} />
-          </span>
-          <span>Settings</span>
-        </div>
+        <NavLink
+          item={{ id: 'settings', label: 'Settings', href: '/app/settings', icon: <Settings size={16} strokeWidth={1.75} /> }}
+          pathname={pathname}
+          push={push}
+        />
       </div>
     </aside>
   )
