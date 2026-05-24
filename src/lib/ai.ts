@@ -12,7 +12,6 @@ function buildOpenAIClient(settings: UserSettings) {
   return new OpenAI({
     apiKey,
     baseURL: settings.ai_provider === 'ollama' ? settings.ai_base_url : undefined,
-    dangerouslyAllowBrowser: true,
   })
 }
 
@@ -28,7 +27,7 @@ async function chatOpenAI(settings: UserSettings, prompt: string): Promise<strin
 
 async function chatClaude(settings: UserSettings, prompt: string): Promise<string> {
   const apiKey = settings.claude_api_key_enc ? decrypt(settings.claude_api_key_enc) : ''
-  const client = new Anthropic({ apiKey, dangerouslyAllowBrowser: true })
+  const client = new Anthropic({ apiKey })
   const res = await client.messages.create({
     model: settings.ai_model || 'claude-sonnet-4-6',
     max_tokens: 2048,
@@ -69,7 +68,12 @@ export async function generateDocument(
     cover_letter: `Write a concise, professional cover letter for this job based on this CV. Return markdown only.\n\nCV:\n${cvText.slice(0, 4000)}\n\nJob description:\n${jobDescription.slice(0, 2000)}`,
     tailored_cv: `Rewrite this CV to be tailored for this job description. Return markdown only.\n\nCV:\n${cvText.slice(0, 4000)}\n\nJob description:\n${jobDescription.slice(0, 2000)}`,
   }
-  return chat(settings, prompts[type])
+  try {
+    return await chat(settings, prompts[type])
+  } catch (err) {
+    console.log('generateDocument failed', { type, err })
+    return ''
+  }
 }
 
 export async function extractJobTitles(
