@@ -34,8 +34,9 @@ export async function getApplication(id: string): Promise<Application | null> {
 export async function createApplication(formData: FormData): Promise<void> {
   const { supabase, userId } = await getUser()
 
-  const payload: ApplicationCreate & { user_id: string } = {
+  const payload: ApplicationCreate & { user_id: string; applied_at: string } = {
     user_id:         userId,
+    applied_at:      new Date().toISOString(),
     company:         formData.get('company') as string,
     role:            formData.get('role') as string,
     url:             (formData.get('url') as string) || null,
@@ -49,14 +50,16 @@ export async function createApplication(formData: FormData): Promise<void> {
     posted_at:       (formData.get('posted_at') as string) || null,
   }
 
-  await supabase.from('applications').insert(payload).select().single()
+  const { error } = await supabase.from('applications').insert(payload).select().single()
+  if (error) throw new Error(error.message)
   revalidatePath('/app/applications')
   revalidatePath('/app/dashboard')
 }
 
 export async function updateApplication(id: string, updates: ApplicationUpdate): Promise<void> {
   const { supabase } = await getUser()
-  await supabase.from('applications').update(updates).eq('id', id)
+  const { error } = await supabase.from('applications').update(updates).eq('id', id)
+  if (error) throw new Error(error.message)
   revalidatePath('/app/applications')
   revalidatePath(`/app/applications/${id}`)
   revalidatePath('/app/dashboard')
@@ -64,7 +67,8 @@ export async function updateApplication(id: string, updates: ApplicationUpdate):
 
 export async function deleteApplication(id: string): Promise<void> {
   const { supabase } = await getUser()
-  await supabase.from('applications').delete().eq('id', id)
+  const { error } = await supabase.from('applications').delete().eq('id', id)
+  if (error) throw new Error(error.message)
   revalidatePath('/app/applications')
   revalidatePath('/app/dashboard')
 }
