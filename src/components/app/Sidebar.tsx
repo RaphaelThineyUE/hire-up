@@ -2,7 +2,7 @@
 
 import { usePathname, useRouter } from 'next/navigation'
 import Image from 'next/image'
-import { LayoutGrid, Inbox, FileText, Settings } from 'lucide-react'
+import { LayoutGrid, Inbox, FileText, Settings, Search } from 'lucide-react'
 import type { ReactNode } from 'react'
 
 interface NavItem {
@@ -10,13 +10,8 @@ interface NavItem {
   label: string
   href: string
   icon: ReactNode
+  badge?: number
 }
-
-const NAV_ITEMS: NavItem[] = [
-  { id: 'dashboard',    label: 'Dashboard',    href: '/app/dashboard',    icon: <LayoutGrid size={16} strokeWidth={1.75} /> },
-  { id: 'applications', label: 'Applications', href: '/app/applications', icon: <Inbox size={16} strokeWidth={1.75} /> },
-  { id: 'cv',           label: 'CV manager',   href: '/app/cv',           icon: <FileText size={16} strokeWidth={1.75} /> },
-]
 
 interface NavLinkProps {
   item: NavItem
@@ -35,7 +30,7 @@ function NavLink({ item, pathname, push }: NavLinkProps) {
       style={{
         position: 'relative',
         display: 'grid',
-        gridTemplateColumns: '18px 1fr',
+        gridTemplateColumns: '18px 1fr auto',
         gap: 10, alignItems: 'center',
         padding: '7px 8px', borderRadius: 'var(--r-sm)',
         fontSize: 13.5, color: active ? 'var(--fg-0)' : 'var(--fg-1)',
@@ -56,14 +51,36 @@ function NavLink({ item, pathname, push }: NavLinkProps) {
       )}
       <span style={{ color: active ? 'var(--fg-0)' : 'var(--fg-2)', display: 'flex' }}>{item.icon}</span>
       <span>{item.label}</span>
+      {item.badge != null && item.badge > 0 && (
+        <span style={{
+          minWidth: 18, height: 18, padding: '0 5px',
+          background: 'var(--accent)', color: '#fff',
+          borderRadius: 9, fontSize: 11, fontWeight: 700,
+          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+          fontFamily: 'var(--font-mono)',
+        }}>
+          {item.badge > 99 ? '99+' : item.badge}
+        </span>
+      )}
     </div>
   )
 }
 
-export function Sidebar() {
+interface SidebarProps {
+  foundCount?: number
+}
+
+export function Sidebar({ foundCount = 0 }: SidebarProps) {
   const pathname = usePathname()
   const router = useRouter()
   const push = router.push.bind(router)
+
+  const NAV_ITEMS: NavItem[] = [
+    { id: 'dashboard',    label: 'Dashboard',    href: '/app/dashboard',    icon: <LayoutGrid size={16} strokeWidth={1.75} /> },
+    { id: 'scan',         label: 'Scan',         href: '/app/scan',         icon: <Search size={16} strokeWidth={1.75} />, badge: foundCount },
+    { id: 'applications', label: 'Applications', href: '/app/applications', icon: <Inbox size={16} strokeWidth={1.75} /> },
+    { id: 'cv',           label: 'CV manager',   href: '/app/cv',           icon: <FileText size={16} strokeWidth={1.75} /> },
+  ]
 
   const settingsActive = pathname.startsWith('/app/settings')
 
