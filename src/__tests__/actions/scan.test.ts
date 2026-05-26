@@ -108,3 +108,22 @@ describe('explainMatch', () => {
     expect(result).toEqual([])
   })
 })
+
+import { listContacts } from '@/actions/scan'
+
+describe('listContacts', () => {
+  it('queries contacts filtered by application_id and user_id ordered by created_at', async () => {
+    const mockOrder = vi.fn().mockResolvedValue({ data: [{ id: 'c1', name: 'Jane' }] })
+    const mockEqUser = vi.fn().mockReturnValue({ order: mockOrder })
+    const mockEqApp = vi.fn().mockReturnValue({ eq: mockEqUser })
+    const mockSelect = vi.fn().mockReturnValue({ eq: mockEqApp })
+    mockFrom.mockReturnValue({ select: mockSelect })
+
+    const result = await listContacts('app-abc')
+
+    expect(mockFrom).toHaveBeenCalledWith('contacts')
+    expect(mockEqApp).toHaveBeenCalledWith('application_id', 'app-abc')
+    expect(mockEqUser).toHaveBeenCalledWith('user_id', 'user-123')
+    expect(result).toEqual([{ id: 'c1', name: 'Jane' }])
+  })
+})

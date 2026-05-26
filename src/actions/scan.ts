@@ -5,7 +5,7 @@ import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { whyMatched } from '@/lib/ai'
 import { getSettings } from '@/actions/settings'
-import type { Application } from '@/lib/types'
+import type { Application, Contact } from '@/lib/types'
 
 async function getUser() {
   const supabase = await createClient()
@@ -50,6 +50,17 @@ export async function explainMatch(applicationId: string): Promise<string[]> {
 
   const settings = await getSettings()
   return whyMatched(cv.extracted_text, app.job_description, settings)
+}
+
+export async function listContacts(applicationId: string): Promise<Contact[]> {
+  const { supabase, userId } = await getUser()
+  const { data } = await supabase
+    .from('contacts')
+    .select('*')
+    .eq('application_id', applicationId)
+    .eq('user_id', userId)
+    .order('created_at', { ascending: true })
+  return (data ?? []) as Contact[]
 }
 
 export async function bulkApplyByScore(minScore: number): Promise<{ count: number }> {

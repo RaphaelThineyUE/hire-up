@@ -50,6 +50,7 @@ export interface Contact {
   email: string | null
   phone: string | null
   role: string | null
+  created_at: string | null
 }
 
 export interface CV {
@@ -59,6 +60,7 @@ export interface CV {
   storage_path: string
   extracted_text: string | null
   word_count: number | null
+  is_default: boolean
   created_at: string
 }
 
