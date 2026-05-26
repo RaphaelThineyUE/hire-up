@@ -30,7 +30,7 @@ vi.mock('@/lib/crypto', () => ({
   encrypt: (v: string) => `encrypted-${v}`,
 }))
 
-import { scoreMatch, generateDocument, extractJobTitles, batchMatchScore } from '@/lib/ai'
+import { scoreMatch, generateDocument, extractJobTitles, batchMatchScore, whyMatched } from '@/lib/ai'
 import type { UserSettings } from '@/lib/types'
 
 const ollamaSettings: UserSettings = {
@@ -139,5 +139,21 @@ describe('scoreMatch (claude path)', () => {
     }
     const score = await scoreMatch('my cv text', 'job description', claudeSettings)
     expect(score).toBe(91)
+  })
+})
+
+describe('whyMatched', () => {
+  it('returns array of reason strings parsed from JSON', async () => {
+    openaiCreate.mockResolvedValueOnce({
+      choices: [{ message: { content: '{"reasons":["Stack overlap","Remote role","Salary above floor"]}' } }],
+    })
+    const result = await whyMatched('cv text', 'job description', ollamaSettings)
+    expect(result).toEqual(['Stack overlap', 'Remote role', 'Salary above floor'])
+  })
+
+  it('returns empty array when AI returns malformed JSON', async () => {
+    openaiCreate.mockResolvedValueOnce({ choices: [{ message: { content: 'bad output' } }] })
+    const result = await whyMatched('cv text', 'job description', ollamaSettings)
+    expect(result).toEqual([])
   })
 })

@@ -5,11 +5,12 @@ import { extractJobTitles, batchMatchScore } from './ai'
 import { searchJobs } from './jobSearch'
 
 export type ScanEvent =
-  | { type: 'step';    n: number; of: number; label: string }
-  | { type: 'source';  name: string; count: number }
-  | { type: 'match';   company: string; role: string; location: string; score: number | null }
-  | { type: 'done';    saved: number; total: number }
-  | { type: 'error';   code: string; message: string }
+  | { type: 'step';   n: number; of: number; label: string }
+  | { type: 'query';  text: string }
+  | { type: 'source'; name: string; count: number }
+  | { type: 'match';  company: string; role: string; location: string; score: number | null; url: string | null; posted_at: string | null; publisher: string | null }
+  | { type: 'done';   saved: number; total: number }
+  | { type: 'error';  code: string; message: string }
 
 function mapContract(type: string | null) {
   if (!type) return null
@@ -42,6 +43,8 @@ export async function findJobs(
     const titles = await extractJobTitles(cvText, settings)
     query = titles.length ? titles.join(' OR ') : 'software engineer'
   }
+
+  emit({ type: 'query', text: query })
 
   // Step 2/4: Search JSearch API
   emit({ type: 'step', n: 2, of: 4, label: 'Searching job boards…' })
@@ -133,9 +136,14 @@ export async function findJobs(
     emit({
       type: 'match',
       company: job.employer_name,
-      role: job.job_title,
+      role:    job.job_title,
       location: [job.job_city, job.job_country].filter(Boolean).join(', '),
       score,
+      url:       job.job_apply_link || null,
+      posted_at: job.job_posted_at_datetime_utc
+        ? job.job_posted_at_datetime_utc.split('T')[0]
+        : null,
+      publisher: job.job_publisher || null,
     })
   }
 

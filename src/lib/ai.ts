@@ -98,6 +98,22 @@ export interface JobCandidate {
   descriptionSnippet: string
 }
 
+export async function whyMatched(
+  cvText: string,
+  jobDescription: string,
+  settings: UserSettings,
+): Promise<string[]> {
+  try {
+    const prompt = `In 3–4 short bullets, explain why this job is a strong match for this candidate.\nReturn JSON only: { "reasons": ["...", "...", "..."] }\n\nCV:\n${cvText.slice(0, 3000)}\n\nJob description:\n${jobDescription.slice(0, 2000)}`
+    const raw = await chat(settings, prompt)
+    const arrayMatch = raw.match(/"reasons"\s*:\s*(\[[\s\S]*?\])/)
+    if (!arrayMatch) return []
+    return JSON.parse(arrayMatch[1]) as string[]
+  } catch {
+    return []
+  }
+}
+
 export async function batchMatchScore(
   cvText: string,
   jobs: JobCandidate[],
