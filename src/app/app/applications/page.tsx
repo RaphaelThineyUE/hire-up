@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useTransition } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { Plus, Search } from 'lucide-react'
+import { Plus, Search, Download } from 'lucide-react'
 import { ApplicationsTable } from '@/components/app/ApplicationsTable'
 import { SlideOver } from '@/components/app/SlideOver'
 import { ApplicationDetail } from '@/components/app/ApplicationDetail'
@@ -58,6 +58,17 @@ export default function ApplicationsPage() {
           </h1>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
+          <a
+            href="/api/export/applications"
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6,
+              padding: '9px 16px', background: 'var(--bg-1)',
+              border: '1px solid var(--border-1)', borderRadius: 'var(--r-sm)',
+              color: 'var(--fg-1)', fontSize: 13, fontWeight: 600, textDecoration: 'none',
+            }}
+          >
+            <Download size={14} strokeWidth={2} /> Export CSV
+          </a>
           <button
             onClick={() => setFindOpen(true)}
             style={{

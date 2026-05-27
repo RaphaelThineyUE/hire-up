@@ -19,6 +19,7 @@ export interface Application {
   location: string | null
   remote_type: RemoteType
   contract_type: ContractType
+  source_board: string | null
   applied_at: string
   posted_at: string | null
   created_at: string
@@ -68,7 +69,7 @@ export interface AppDocument {
   id: string
   user_id: string
   application_id: string
-  type: 'cover_letter' | 'tailored_cv'
+  type: 'cover_letter' | 'tailored_cv' | 'outreach_email'
   filename: string
   storage_path: string
   content_markdown: string | null

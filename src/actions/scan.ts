@@ -63,6 +63,25 @@ export async function listContacts(applicationId: string): Promise<Contact[]> {
   return (data ?? []) as Contact[]
 }
 
+export async function createContact(
+  applicationId: string,
+  fields: { name?: string; role?: string; email?: string; phone?: string },
+): Promise<Contact> {
+  const { supabase, userId } = await getUser()
+  const { data, error } = await supabase
+    .from('contacts')
+    .insert({ user_id: userId, application_id: applicationId, ...fields })
+    .select()
+    .single()
+  if (error) throw new Error(error.message)
+  return data as Contact
+}
+
+export async function deleteContact(contactId: string): Promise<void> {
+  const { supabase, userId } = await getUser()
+  await supabase.from('contacts').delete().eq('id', contactId).eq('user_id', userId)
+}
+
 export async function bulkApplyByScore(minScore: number): Promise<{ count: number }> {
   const { supabase, userId } = await getUser()
   const { data, error } = await supabase
