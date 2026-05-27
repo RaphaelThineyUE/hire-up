@@ -1,8 +1,8 @@
-import { getCV } from '@/actions/cv'
+import { getCVs } from '@/actions/cv'
 import { CVUploadForm } from '@/components/app/CVUploadForm'
 
 export default async function CVPage() {
-  const cv = await getCV()
+  const cvs = await getCVs()
 
   return (
     <div style={{ padding: 32, maxWidth: 800, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 28 }}>
@@ -15,7 +15,7 @@ export default async function CVPage() {
         </h1>
       </div>
 
-      <CVUploadForm currentCV={cv} />
+      <CVUploadForm cvs={cvs} />
     </div>
   )
 }

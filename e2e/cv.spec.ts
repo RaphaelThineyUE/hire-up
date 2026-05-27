@@ -17,39 +17,45 @@ test.describe('CV Manager', () => {
     await expect(page.getByRole('heading', { name: 'CV Manager' })).toBeVisible()
   })
 
-  test('shows upload form when no CV exists', async ({ loggedIn: page }) => {
+  test('shows Add CV button', async ({ loggedIn: page }) => {
     await page.goto('/app/cv')
-    // Either shows the upload form or an existing CV — both are valid states
-    const hasUpload = await page.locator('input[type="file"]').isVisible()
-    expect(hasUpload).toBe(true)
+    await expect(page.getByRole('button', { name: /Add CV/i })).toBeVisible()
   })
 
   test('uploads cv.docx and shows filename + word count', async ({ loggedIn: page }) => {
     await page.goto('/app/cv')
 
-    // Delete any existing CV first so we get a clean upload
-    const deleteBtn = page.locator('button', { has: page.locator('svg') }).filter({ hasText: '' }).first()
+    // Delete all existing CVs first
     const hasExisting = await page.locator('text=/words/').isVisible()
     if (hasExisting) {
       page.on('dialog', d => d.accept())
-      await deleteBtn.click()
-      await page.waitForTimeout(1_500)
+      const deleteBtns = page.locator('button[title="Delete CV"]')
+      const count = await deleteBtns.count()
+      for (let i = 0; i < count; i++) {
+        await deleteBtns.first().click()
+        await page.waitForTimeout(800)
+      }
     }
 
-    await page.setInputFiles('input[type="file"]', CV_PATH)
-    await page.getByRole('button', { name: /Upload CV|Replace CV/ }).click()
+    // Trigger hidden file input via the Add CV button
+    const [fileChooser] = await Promise.all([
+      page.waitForEvent('filechooser'),
+      page.getByRole('button', { name: /Add CV/i }).click(),
+    ])
+    await fileChooser.setFiles(CV_PATH)
 
     // Wait for revalidation — filename should appear
     await expect(page.getByText('cv.docx')).toBeVisible({ timeout: 20_000 })
-    // Word count should appear (non-zero)
     await expect(page.locator('text=/\\d+ words/')).toBeVisible({ timeout: 5_000 })
   })
 
   test('shows extracted text preview after upload', async ({ loggedIn: page }) => {
     await page.goto('/app/cv')
-    // If a CV is already uploaded the preview block should be visible
-    const hasPreview = await page.locator('text=/Extracted text preview/').isVisible()
-    if (hasPreview) {
+    // Expand the CV card if a CV is present
+    const expandBtn = page.locator('button[title="Show preview"]').first()
+    if (await expandBtn.isVisible()) {
+      await expandBtn.click()
+      await expect(page.getByText('Extracted text preview')).toBeVisible()
       await expect(page.locator('pre')).toBeVisible()
     }
   })
@@ -58,14 +64,16 @@ test.describe('CV Manager', () => {
     await page.goto('/app/cv')
     const hasCV = await page.locator('text=cv.docx').isVisible()
     if (!hasCV) {
-      // Upload first
-      await page.setInputFiles('input[type="file"]', CV_PATH)
-      await page.getByRole('button', { name: /Upload CV|Replace CV/ }).click()
+      const [fileChooser] = await Promise.all([
+        page.waitForEvent('filechooser'),
+        page.getByRole('button', { name: /Add CV/i }).click(),
+      ])
+      await fileChooser.setFiles(CV_PATH)
       await expect(page.getByText('cv.docx')).toBeVisible({ timeout: 20_000 })
     }
 
     page.on('dialog', d => d.accept())
-    await page.locator('button[style*="danger"]').click()
-    await expect(page.getByText('No CV uploaded yet.')).toBeVisible({ timeout: 8_000 })
+    await page.locator('button[title="Delete CV"]').first().click()
+    await expect(page.getByText('No CVs uploaded yet.')).toBeVisible({ timeout: 8_000 })
   })
 })
