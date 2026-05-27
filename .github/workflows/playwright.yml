@@ -19,6 +19,9 @@ jobs:
       run: npx playwright install --with-deps
     - name: Run Playwright tests
       run: npx playwright test
+      env:
+        NEXT_PUBLIC_SUPABASE_URL: https://bsghjiqmbfnmdoasmhxr.supabase.co
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJzZ2hqaXFtYmZubWRvYXNtaHhyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk1ODQxNTQsImV4cCI6MjA5NTE2MDE1NH0.GBfnYnCCMm4L8MQaT2kDRBzib8LFpyq6603qcvRH1qw
     - uses: actions/upload-artifact@v4
       if: ${{ !cancelled() }}
       with:

@@ -57,6 +57,9 @@ export async function GET(request: NextRequest) {
       .from('cvs')
       .select('extracted_text')
       .eq('user_id', userId)
+      .order('is_default', { ascending: false })
+      .order('created_at', { ascending: false })
+      .limit(1)
       .maybeSingle()
 
     if (!cv?.extracted_text) {
