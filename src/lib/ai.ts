@@ -3,7 +3,7 @@ import Anthropic from '@anthropic-ai/sdk'
 import type { UserSettings } from './types'
 import { decrypt } from './crypto'
 
-type DocumentType = 'cover_letter' | 'tailored_cv'
+type DocumentType = 'cover_letter' | 'tailored_cv' | 'outreach_email'
 
 function buildOpenAIClient(settings: UserSettings) {
   const apiKey = settings.ai_provider === 'openai' && settings.openai_api_key_enc
@@ -63,10 +63,13 @@ export async function generateDocument(
   jobDescription: string,
   type: DocumentType,
   settings: UserSettings,
+  contactInfo?: string,
 ): Promise<string> {
+  const contactLine = contactInfo ? `\n\nContact: ${contactInfo}` : ''
   const prompts: Record<DocumentType, string> = {
     cover_letter: `Write a concise, professional cover letter for this job based on this CV. Return markdown only.\n\nCV:\n${cvText.slice(0, 4000)}\n\nJob description:\n${jobDescription.slice(0, 2000)}`,
     tailored_cv: `Rewrite this CV to be tailored for this job description. Return markdown only.\n\nCV:\n${cvText.slice(0, 4000)}\n\nJob description:\n${jobDescription.slice(0, 2000)}`,
+    outreach_email: `Draft a short, personalized cold outreach email (under 150 words) from the CV author to the hiring contact${contactLine} about this role. Be professional and focus on fit. Return markdown only.\n\nCV:\n${cvText.slice(0, 2000)}\n\nJob description:\n${jobDescription.slice(0, 1000)}`,
   }
   try {
     return await chat(settings, prompts[type])

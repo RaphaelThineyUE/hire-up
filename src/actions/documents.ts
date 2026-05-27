@@ -28,7 +28,8 @@ export async function listDocuments(applicationId: string): Promise<AppDocument[
 export async function generateDocumentForApplication(
   applicationId: string,
   jobDescription: string,
-  type: 'cover_letter' | 'tailored_cv',
+  type: 'cover_letter' | 'tailored_cv' | 'outreach_email',
+  contactInfo?: string,
 ): Promise<{ id: string } | { error: string }> {
   const { supabase, userId } = await getUser()
 
@@ -36,7 +37,7 @@ export async function generateDocumentForApplication(
   if (!cv?.extracted_text) return { error: 'No CV found. Upload your CV first.' }
 
   const settings = await getSettings()
-  const markdown = await aiGenerateDocument(cv.extracted_text, jobDescription, type, settings)
+  const markdown = await aiGenerateDocument(cv.extracted_text, jobDescription, type, settings, contactInfo)
   if (!markdown) return { error: 'AI document generation failed or returned empty content.' }
 
   const filename = `${type}-${Date.now()}.md`

@@ -160,6 +160,7 @@ export async function findJobs(
     location: [job.job_city, job.job_country].filter(Boolean).join(', ') || null,
     remote_type: job.job_is_remote ? 'remote' : null,
     contract_type: mapContract(job.job_employment_type),
+    source_board: job.job_publisher || null,
     posted_at: job.job_posted_at_datetime_utc
       ? job.job_posted_at_datetime_utc.split('T')[0]
       : null,
