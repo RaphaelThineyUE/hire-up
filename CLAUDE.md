@@ -41,12 +41,15 @@ Define success criteria upfront. Transform tasks into verifiable goals with clea
 ## Build & Run
 
 ```bash
-npm install    # Install
-npm run build  # Build
-npm run dev    # Dev
-npm test       # Test (vitest)
-npm run test:run  # Test (single run)
-npm run lint   # Lint
+npm install           # Install
+npm run build         # Build
+npm run dev           # Dev
+npm test              # Test (vitest watch)
+npm run test:run      # Test (single run)
+npm run lint          # Lint
+npm run e2e           # E2E tests (Playwright)
+npm run seed          # Seed dev DB with test data
+npm run seed:teardown # Remove seeded data
 ```
 
 ---
@@ -74,23 +77,32 @@ npm run lint   # Lint
 
 ```
 src/
-  actions/        ← Server Actions (Supabase mutations)
-  app/            ← Next.js App Router pages + layouts
-    (auth)/       ← Login/signup (no sidebar)
-    app/          ← Protected app shell (Sidebar + TopBar)
+  actions/          ← Server Actions (Supabase mutations)
+    applications.ts  cv.ts  documents.ts  scan.ts  settings.ts
+  app/              ← Next.js App Router pages + layouts
+    (auth)/         ← Login/signup (no sidebar)
+    app/            ← Protected app shell (Sidebar + TopBar)
+      applications/  cv/  dashboard/  scan/  settings/
+    api/            ← Route Handlers
+      cron/  documents/  find-jobs/  scrape/
     globals.css
-    tokens.css    ← Design tokens (colors, typography, spacing)
+    tokens.css      ← Design tokens (colors, typography, spacing)
   components/
-    app/          ← Shared UI components
+    app/            ← Shared UI components
   lib/
-    supabase/     ← Browser and server Supabase clients
-    types.ts      ← Shared TypeScript interfaces
-    crypto.ts     ← AES-256-GCM encrypt/decrypt
-    utils.ts      ← Score utilities
-  __tests__/      ← Vitest tests
-middleware.ts     ← Auth session refresh + /app/* → /login redirect
+    ai.ts           ← Claude AI helpers (scoring, tailoring, cover letters)
+    findJobs.ts     ← multi-board job search orchestration
+    jobSearch.ts    ← job search types/utilities
+    scraper.ts      ← URL scraping logic
+    supabase/       ← Browser and server Supabase clients
+    types.ts        ← Shared TypeScript interfaces
+    crypto.ts       ← AES-256-GCM encrypt/decrypt
+    utils.ts        ← Score utilities
+  __tests__/        ← Vitest tests
+e2e/                ← Playwright E2E specs (auth, cv, settings, ai-features)
+middleware.ts       ← Auth session refresh + /app/* → /login redirect
 supabase/
-  migrations/     ← SQL schema migrations
+  migrations/       ← SQL schema migrations
 ```
 
 ---

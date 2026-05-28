@@ -25,11 +25,14 @@ Open [http://localhost:3000](http://localhost:3000).
 ```bash
 npm run dev        # Start dev server
 npm run build      # Production build
-npm run test:run   # Run tests once
-npm test           # Test in watch mode
-npm run lint       # Lint
+npm run test:run        # Run tests once
+npm test                # Test in watch mode
+npm run lint            # Lint
+npm run e2e             # Playwright E2E tests
+npm run seed            # Seed dev database with test data
+npm run seed:teardown   # Remove seeded data
 ```
 
 ## Design
 
-The `docs/ui-kit/` directory contains the click-through HTML prototype and shared React component files used as pattern references. Use the `/hire-up-design` skill in Claude Code for design questions.
+Use the `/hire-up-design` skill in Claude Code for design questions and brand/token guidelines.

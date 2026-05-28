@@ -27,8 +27,11 @@ Hire Up: a job-search command center. Next.js 16 app + Supabase backend. Single 
 
 ## Plan files
 
-Implementation plans live in `docs/superpowers/plans/`. Active plan:
-- `2026-05-23-plan-1-foundation-and-core.md` — Tasks 1–10 complete, Tasks 11–15 pending
+Implementation plans live in `docs/superpowers/plans/`. All complete:
+- `2026-05-23-plan-1-foundation-and-core.md` — auth, dashboard, applications UI
+- `2026-05-23-plan-2-ai-features.md` — CV upload, AI scoring, settings
+- `2026-05-24-plan-3-scraper-and-cron.md` — job board scraper, cron route handler
+- `2026-05-24-plan-4-scan-page.md` — /app/scan, SSE streaming, ScanJobFlyout
 
 ## Conventions
 
